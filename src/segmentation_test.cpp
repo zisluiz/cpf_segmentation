@@ -42,23 +42,32 @@
 
 using namespace std;
 using namespace APC;
-int main(int argc, char** argv){
-  
+int main(int argc, char* argv[]){
+  printf("Entrou no main!\n");
+
   Segmentation seg;
   Config config;
+  printf("Criou configs!\n");
   config.noise_threshold = 0.01; // 1cm
   config.voxel_resolution = 0.008f;// 0.8cm
   config.seed_resolution = 0.08f; // 8cm
   config.min_plane_area = 0.01f; // m^2;
   config.max_curvature = 0.01;
+  printf("Setou parametros!\n");
   seg.setConfig(config);
+
+  printf("Setou configs!\n");
 
   PCL_INFO ("Loading pointcloud\n");
   pcl::PointCloud<PointT>::Ptr input_cloud_ptr (new pcl::PointCloud<PointT>);
 
 
+printf("Iniciando loading!\n");
+
   /// Get pcd path from command line
   std::string pcd_filename = argv[1];
+
+  printf("Filename: %s!\n",pcd_filename.c_str());
   std::string ext("");
   ext = pcd_filename;
   size_t sep = ext.find_last_of ('.');
@@ -138,5 +147,7 @@ int main(int argc, char** argv){
       viewer->spinOnce (100);
     }
   }
+
+  //delete seg;
   return 0;
 }

@@ -23,6 +23,8 @@ To test the library, run
 
 ```
 ./segmentation_test ../test_data/tum_small.pcd
+./segmentation_test ../test_data/55.pcd
+./segmentation_test ../test_data/56.pcd - not working
 ```
 
 If you want to cite this work, you can use the bibtex entry below

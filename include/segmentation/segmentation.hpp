@@ -119,7 +119,11 @@ namespace APC {
     * @brief setConfig
     * @param config
     */
-    void setConfig(const Config& config){config_=config;}
+    void setConfig(const Config& config){
+      printf("Dentro de segmentation: antes de setar");
+      config_=config;
+      printf("Dentro de segmentation: depois de setar");
+    }
 
     /**
     * @brief getConfig

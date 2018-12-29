@@ -301,6 +301,8 @@ void Segmentation::doSegmentation(){
           plane_pairwises(i,j) = p_cost*0.5;
           plane_pairwises(j,i) = p_cost*0.5;
         }
+
+        std::cout << "Calculing number of planes, i = " << i << " of total " << num_planes << "\t";
       }
 
       Eigen::VectorXi initLabeling(num_planes);
