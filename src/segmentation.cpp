@@ -302,7 +302,7 @@ void Segmentation::doSegmentation(){
           plane_pairwises(j,i) = p_cost*0.5;
         }
 
-        std::cout << "Calculing number of planes, i = " << i << " of total " << num_planes << "\t";
+        //std::cout << "Calculing number of planes, i = " << i << " of total " << num_planes << "\t";
       }
 
       Eigen::VectorXi initLabeling(num_planes);
@@ -447,18 +447,18 @@ void Segmentation::doSegmentation(){
     int outlier_label = 0;
     std::map<uint32_t,uint32_t> label_list_map;
     int new_label = 1;
-    for (uint32_t i = 0; i != component.size(); ++i){
+    for (uint32_t i = 0; i != component.size(); ++i) {
       int count = std::count(component.begin(), component.end(), component[i]);
-      int label = component[i];
+      int label = component[i];      
       if (label_list_map.find(label) == label_list_map.end() && count >= min_voxels_per_cluster){ // label not found
-        label_list_map[label] = new_label;
-        new_label++;
+          label_list_map[label] = new_label;
+          new_label++;
       }
       if (count < min_voxels_per_cluster){ // minimum number of supervoxels in each component
-        supervoxel_labels.push_back(outlier_label);
+          supervoxel_labels.push_back(outlier_label);
       }
       else
-      supervoxel_labels.push_back(label_list_map.find(label)->second);
+        supervoxel_labels.push_back(label_list_map.find(label)->second);
     }
   }
   ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -472,21 +472,44 @@ void Segmentation::doSegmentation(){
   uint32_t idx = 0;
   for (; cluster_itr_ != supervoxel_clusters.end(); cluster_itr_++){
     //label_to_seg_map[cluster_itr_->first] = sv_labels.at(idx); // Use this to plot plane segmentation only
-    label_to_seg_map[cluster_itr_->first] = supervoxel_labels.at(idx);
+    label_to_seg_map[cluster_itr_->first] = supervoxel_labels.at(idx);    
     idx++;
   }
+
+  std::cout << "size labels : " << supervoxel_labels.size() << "\n";
+
+
   typename pcl::PointCloud<pcl::PointXYZL>::iterator point_itr = (*segmented_cloud_ptr_).begin();
   uint32_t zero_label = 0;
+  std::cout << "*************** Results ***************" << "\n";
+  std::map<uint32_t, ObjectSeg*> objects;
+  int count = 0;
   for (; point_itr != (*segmented_cloud_ptr_).end(); ++point_itr)
   {
+    //std::cout << "label : " << point_itr->label << "label_to_seg_map : " << label_to_seg_map[point_itr->label] << "\n";
     if (point_itr->label == 0){
       zero_label++;
     }else{
       point_itr->label = label_to_seg_map[point_itr->label];
+
+      if (objects.find(point_itr->label) != objects.end()) {          
+          objects[point_itr->label]->points.push_back(new PointSeg(point_itr->x, point_itr->y, point_itr->z));
+      } else {
+        ObjectSeg* object = new ObjectSeg(count);
+        std::cout << "Pushing point" << point_itr->label << "\n";
+        object->points.push_back(new PointSeg(point_itr->x, point_itr->y, point_itr->z));
+        std::cout << "Inserting label" << point_itr->label << " x: " << point_itr->x << " y: " << point_itr->y << " z: " << point_itr->z << "\n";
+        objects[point_itr->label] = object;
+        count++;
+      }
     }
   }
   printf("All Time taken: %.2fms\n", (double)(clock() - sv_start)/(CLOCKS_PER_SEC/1000));
 
-
+  /*ObjectSeg* results = new ObjectSeg[supervoxel_labels.size()];  
+  ObjectSeg* results = new ObjectSeg[maxLength];
+  int numPoints = obj.pxs.size();
+  results[objs] = ObjectSeg(objs+1, numPoints, new PointSeg[numPoints]);    
+  delete[] results;**/
 }
 /// END main

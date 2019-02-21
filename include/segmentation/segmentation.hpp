@@ -96,6 +96,7 @@
 
 
 #include <segmentation/config.h>
+#include <segmentation/objectseg.h>
 
 # define M_PI 3.14159265358979323846  /* pi */
 
