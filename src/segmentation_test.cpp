@@ -139,6 +139,7 @@ printf("Iniciando loading!\n");
     /// Configure Visualizer
     pcl::visualization::PCLVisualizer::Ptr viewer (new pcl::visualization::PCLVisualizer ("3D Viewer"));
     viewer->setBackgroundColor (0, 0, 0);
+    //viewer->addCoordinateSystem();
     viewer->addPointCloud (segmented_cloud_ptr, "Segmented point cloud");
 
     PCL_INFO ("Loading viewer\n");

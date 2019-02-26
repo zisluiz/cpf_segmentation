@@ -497,6 +497,7 @@ void Segmentation::doSegmentation(){
       } else {
         ObjectSeg* object = new ObjectSeg(count);
         std::cout << "Pushing point" << point_itr->label << "\n";
+
         object->points.push_back(new PointSeg(point_itr->x, point_itr->y, point_itr->z));
         std::cout << "Inserting label" << point_itr->label << " x: " << point_itr->x << " y: " << point_itr->y << " z: " << point_itr->z << "\n";
         objects[point_itr->label] = object;

@@ -22,6 +22,7 @@ pkg-config --list-all | grep segmentation
 To test the library, run
 
 ```
+./segmentation_test ../test_data/14.ply
 ./segmentation_test ../test_data/tum_small.pcd
 ./segmentation_test ../test_data/55.pcd
 ./segmentation_test ../test_data/56.pcd - not working
