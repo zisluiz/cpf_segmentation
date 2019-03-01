@@ -89,7 +89,7 @@ printf("Iniciando loading!\n");
   }
 
   std::vector< int > index;
-  if (!input_cloud_ptr->is_dense){
+  if (!input_cloud_ptr->is_dense) {
     PCL_WARN("Point data not dense, eating NaNs\n");
     pcl::removeNaNFromPointCloud<PointT>(*input_cloud_ptr,*input_cloud_ptr,index);
     PCL_INFO ("Done making cloud\n");

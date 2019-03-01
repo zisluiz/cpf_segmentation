@@ -18,8 +18,6 @@ include_directories(${OpenCV_INCLUDE_DIRS} ${EIGEN3_INCLUDE_DIR} ${PROJECT_SOURC
 
 set(HEADERS
     ./include/segmentation/segmentation.hpp
-    ./include/segmentation/objectseg.h
-    ./include/segmentation/pointseg.h
     ./include/segmentation/config.h
     ./include/segmentation/segmentation_helpers.h
     ./include/segmentation/lsa_tr.h
@@ -36,8 +34,11 @@ include_directories(${CMAKE_CURRENT_SOURCE_DIR}/gco-v3.0)
 #add_library (LinkedBlockList gco-v3.0/LinkedBlockList.cpp)
 #add_library (GCoptimization gco-v3.0/GCoptimization.cpp)
 
-add_library (segmentation SHARED src/segmentation.cpp src/configprop.cpp src/objectseg.cpp src/pointseg.cpp gco-v3.0/maxflow.cpp gco-v3.0/maxflow.cpp gco-v3.0/LinkedBlockList.cpp gco-v3.0/GCoptimization.cpp gco-v3.0/graph.cpp ${HEADERS})
+add_library (segmentation SHARED src/segmentation.cpp src/configprop.cpp gco-v3.0/maxflow.cpp gco-v3.0/maxflow.cpp gco-v3.0/LinkedBlockList.cpp gco-v3.0/GCoptimization.cpp gco-v3.0/graph.cpp ${HEADERS})
 target_link_libraries (segmentation ${PCL_LIBRARIES})
+
+add_library (segmentation_lib SHARED src/configprop.cpp src/facade.cpp)
+target_link_libraries (segmentation_lib segmentation ${PCL_LIBRARIES})
 
 add_executable (segmentation_test src/segmentation_test.cpp)
 target_link_libraries (segmentation_test ${PCL_LIBRARIES} segmentation)

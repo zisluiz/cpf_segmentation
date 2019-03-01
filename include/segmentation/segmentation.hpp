@@ -96,7 +96,6 @@
 
 
 #include <segmentation/config.h>
-#include <segmentation/objectseg.h>
 
 # define M_PI 3.14159265358979323846  /* pi */
 
@@ -120,10 +119,8 @@ namespace APC {
     * @brief setConfig
     * @param config
     */
-    void setConfig(const Config& config){
-      printf("Dentro de segmentation: antes de setar");
+    void setConfig(const Config& config){      
       config_=config;
-      printf("Dentro de segmentation: depois de setar");
     }
 
     /**

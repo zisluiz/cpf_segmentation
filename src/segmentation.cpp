@@ -59,16 +59,21 @@ void Segmentation::doSegmentation(){
 
   if (config_.use_supervoxel_refinement)
   {
-    PCL_INFO ("Refining supervoxels\n");
+    if (config_.showDebug)
+      PCL_INFO ("Refining supervoxels\n");
     super.refineSupervoxels (2, supervoxel_clusters);
   }
-  std::cout << "Number of supervoxels: " << supervoxel_clusters.size () << "\n";
+
+  if (config_.showDebug)
+    std::cout << "Number of supervoxels: " << supervoxel_clusters.size () << "\n";
 
   std::multimap<uint32_t, uint32_t> supervoxel_adjacency;
   super.getSupervoxelAdjacency (supervoxel_adjacency);
   pcl::PointCloud<pcl::PointNormal>::Ptr sv_centroid_normal_cloud = pcl::SupervoxelClustering<PointT>::makeSupervoxelNormalCloud (supervoxel_clusters);
   clock_t sv_end = clock();
-  printf("Super-voxel segmentation takes: %.2fms\n", (double)(sv_end - sv_start)/(CLOCKS_PER_SEC/1000));
+
+  if (config_.showDebug)
+    printf("Super-voxel segmentation takes: %.2fms\n", (double)(sv_end - sv_start)/(CLOCKS_PER_SEC/1000));
 
   /////////////////////////////////////////////////////////////////////////////////////////////////////////////
   // Constrained plane extraction
@@ -111,7 +116,8 @@ void Segmentation::doSegmentation(){
 
   // Plane hypothesis generation using random sampling
   if (config_.use_random_sampling){
-    std::cout << "Randomly sampling plane hypotheses...\n";
+    if (config_.showDebug)
+      std::cout << "Randomly sampling plane hypotheses...\n";
     int max_random_hyps = 1000;
     int count = 0;
     int num_supervoxels = supervoxel_clusters.size ();
@@ -265,11 +271,13 @@ void Segmentation::doSegmentation(){
       }
     }
     clock_t plane_sampling_end = clock();
-    printf("Plane generation takes: %.2fms\n", (double)(plane_sampling_end - sv_end)/(CLOCKS_PER_SEC/1000));
+    if (config_.showDebug)
+      printf("Plane generation takes: %.2fms\n", (double)(plane_sampling_end - sv_end)/(CLOCKS_PER_SEC/1000));
     num_planes = unaries.size();
-    std::cout << "Number of plane candidates = " << num_planes << "\n";
-    if (num_planes > 1){
+    if (config_.showDebug)
+      std::cout << "Number of plane candidates = " << num_planes << "\n";
 
+    if (num_planes > 1){
       inliers_mat.conservativeResize(num_planes, num_super_voxels);
       normals_mat.conservativeResize(num_planes, num_super_voxels);
       point2plane_mat.conservativeResize(num_planes, num_super_voxels);
@@ -302,7 +310,8 @@ void Segmentation::doSegmentation(){
           plane_pairwises(j,i) = p_cost*0.5;
         }
 
-        //std::cout << "Calculing number of planes, i = " << i << " of total " << num_planes << "\t";
+        if (config_.showDebug)
+          std::cout << "Calculing number of planes, i = " << i << " of total " << num_planes << "\t";
       }
 
       Eigen::VectorXi initLabeling(num_planes);
@@ -311,12 +320,15 @@ void Segmentation::doSegmentation(){
       double finalEnergy = 0;
       LSA_TR(&finalEnergy, &finalLabeling, num_planes, plane_unaries, plane_pairwises, initLabeling);
       if (finalEnergy == 0){
-        PCL_WARN("Optimization got stuck \n");
+        if (config_.showDebug)
+          PCL_WARN("Optimization got stuck \n");
         finalLabeling = Eigen::VectorXi::Ones(num_planes);
       }
       int num_selected_planes = finalLabeling.sum();
-      std::cout << "Number of supporting planes detected = " << num_selected_planes << "\t";
-      std::cout << "(Note: This is not the true number of planes in the scene.)\n";
+      if (config_.showDebug) {
+        std::cout << "Number of supporting planes detected = " << num_selected_planes << "\t";
+        std::cout << "(Note: This is not the true number of planes in the scene.)\n";
+      }
       std::vector<Eigen::Vector4f> selected_planes;
       Eigen::MatrixXf unary_matrix(num_selected_planes + 1, num_super_voxels);
       int sidx = 1;
@@ -384,13 +396,15 @@ void Segmentation::doSegmentation(){
       //////////////////////////////////////////////////////////////////////////////////////////////////////////////
     }
     clock_t plane_fitting_end = clock();
-    printf("Global plane extraction takes: %.2fms\n", (double)(plane_fitting_end - plane_sampling_end)/(CLOCKS_PER_SEC/1000));
+    if (config_.showDebug)
+      printf("Global plane extraction takes: %.2fms\n", (double)(plane_fitting_end - plane_sampling_end)/(CLOCKS_PER_SEC/1000));
   }
 
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////
   // Segment the point cloud into objects
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////
-  std::cout << "Run graph based object segmentation using the extracted planes\n";
+  if (config_.showDebug)
+    std::cout << "Run graph based object segmentation using the extracted planes\n";
   using namespace boost;
   std::vector<uint32_t> supervoxel_labels;
   {
@@ -441,24 +455,25 @@ void Segmentation::doSegmentation(){
 
     std::vector<uint32_t> component(num_vertices(G));
     uint32_t num = connected_components(G, &component[0]);
-    std::cout << "Number of connected components: " << num <<"\n";
+    if (config_.showDebug)
+      std::cout << "Number of connected components: " << num <<"\n";
 
     int min_voxels_per_cluster = 2;
     int outlier_label = 0;
     std::map<uint32_t,uint32_t> label_list_map;
     int new_label = 1;
-    for (uint32_t i = 0; i != component.size(); ++i) {
+    for (uint32_t i = 0; i != component.size(); ++i){
       int count = std::count(component.begin(), component.end(), component[i]);
-      int label = component[i];      
+      int label = component[i];
       if (label_list_map.find(label) == label_list_map.end() && count >= min_voxels_per_cluster){ // label not found
-          label_list_map[label] = new_label;
-          new_label++;
+        label_list_map[label] = new_label;
+        new_label++;
       }
       if (count < min_voxels_per_cluster){ // minimum number of supervoxels in each component
-          supervoxel_labels.push_back(outlier_label);
+        supervoxel_labels.push_back(outlier_label);
       }
       else
-        supervoxel_labels.push_back(label_list_map.find(label)->second);
+      supervoxel_labels.push_back(label_list_map.find(label)->second);
     }
   }
   ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -472,45 +487,21 @@ void Segmentation::doSegmentation(){
   uint32_t idx = 0;
   for (; cluster_itr_ != supervoxel_clusters.end(); cluster_itr_++){
     //label_to_seg_map[cluster_itr_->first] = sv_labels.at(idx); // Use this to plot plane segmentation only
-    label_to_seg_map[cluster_itr_->first] = supervoxel_labels.at(idx);    
+    label_to_seg_map[cluster_itr_->first] = supervoxel_labels.at(idx);
     idx++;
   }
-
-  std::cout << "size labels : " << supervoxel_labels.size() << "\n";
-
-
   typename pcl::PointCloud<pcl::PointXYZL>::iterator point_itr = (*segmented_cloud_ptr_).begin();
   uint32_t zero_label = 0;
-  std::cout << "*************** Results ***************" << "\n";
-  std::map<uint32_t, ObjectSeg*> objects;
-  int count = 0;
   for (; point_itr != (*segmented_cloud_ptr_).end(); ++point_itr)
   {
-    //std::cout << "label : " << point_itr->label << "label_to_seg_map : " << label_to_seg_map[point_itr->label] << "\n";
     if (point_itr->label == 0){
       zero_label++;
     }else{
       point_itr->label = label_to_seg_map[point_itr->label];
-
-      if (objects.find(point_itr->label) != objects.end()) {          
-          objects[point_itr->label]->points.push_back(new PointSeg(point_itr->x, point_itr->y, point_itr->z));
-      } else {
-        ObjectSeg* object = new ObjectSeg(count);
-        std::cout << "Pushing point" << point_itr->label << "\n";
-
-        object->points.push_back(new PointSeg(point_itr->x, point_itr->y, point_itr->z));
-        std::cout << "Inserting label" << point_itr->label << " x: " << point_itr->x << " y: " << point_itr->y << " z: " << point_itr->z << "\n";
-        objects[point_itr->label] = object;
-        count++;
-      }
     }
   }
-  printf("All Time taken: %.2fms\n", (double)(clock() - sv_start)/(CLOCKS_PER_SEC/1000));
 
-  /*ObjectSeg* results = new ObjectSeg[supervoxel_labels.size()];  
-  ObjectSeg* results = new ObjectSeg[maxLength];
-  int numPoints = obj.pxs.size();
-  results[objs] = ObjectSeg(objs+1, numPoints, new PointSeg[numPoints]);    
-  delete[] results;**/
+  if (config_.showDebug)
+    printf("All Time taken: %.2fms\n", (double)(clock() - sv_start)/(CLOCKS_PER_SEC/1000));
 }
 /// END main

@@ -59,9 +59,10 @@ public:
         noise_threshold(0.02f),
         smooth_cost (0.001),
         min_inliers_per_plane (100),
-	min_plane_area(0.025),
+	    min_plane_area(0.025),
         max_num_iterations (25),
         max_curvature (0.01f),
+        showDebug(true),
         gc_scale (1e3){}
 
     public:
@@ -84,7 +85,7 @@ public:
     int max_num_iterations;
     float max_curvature;
     int gc_scale;
-
+    bool showDebug;
 
     Config& operator=(const Config& config){
 
@@ -105,6 +106,7 @@ public:
         max_num_iterations=config.max_num_iterations;
         max_curvature=config.max_curvature;
         gc_scale=config.gc_scale;
+        showDebug=config.showDebug;
 
         return *this;
     }
