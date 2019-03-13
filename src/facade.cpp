@@ -17,18 +17,18 @@ class Facade
 
 Facade::Facade(std::string configFilePath)
 {
+    std::cout << "Config file: " << configFilePath.c_str() << std::endl;
     ConfigProperties *configProp = new ConfigProperties(configFilePath);
-    config.noise_threshold = std::stod(configProp->config["noise_threshold"]);
+    config.noise_threshold = std::stof(configProp->config["noise_threshold"]);
     config.voxel_resolution = std::stof(configProp->config["voxel_resolution"]);
     config.seed_resolution = std::stof(configProp->config["seed_resolution"]);
     config.min_plane_area = std::stof(configProp->config["min_plane_area"]);
     config.max_curvature = std::stod(configProp->config["max_curvature"]);
 
     config.color_importance = std::stof(configProp->config["color_importance"]);
-    config.spatial_importance = std::stof(configProp->config["spatial_importance"]);
-    config.use_single_cam_transform = std::stoi(configProp->config["use_single_cam_transform"]);
-    config.use_supervoxel_refinement = std::stoi(configProp->config["use_supervoxel_refinement"]);
-    config.use_random_sampling = std::stoi(configProp->config["use_random_sampling"]);
+    config.spatial_importance = std::stof(configProp->config["spatial_importance"]);    
+    std::istringstream(configProp->config["use_supervoxel_refinement"]) >> config.use_supervoxel_refinement;
+    std::istringstream(configProp->config["use_random_sampling"]) >> config.use_random_sampling;
     config.min_inliers_per_plane = std::stoi(configProp->config["min_inliers_per_plane"]);
     config.max_num_iterations = std::stoi(configProp->config["max_num_iterations"]);
     config.normal_importance = std::stof(configProp->config["normal_importance"]);
@@ -40,40 +40,44 @@ Facade::Facade(std::string configFilePath)
 }
 
 pcl::PointCloud<pcl::PointXYZL>::Ptr Facade::segmentImage(pcl::PointCloud<PointT>::Ptr pointCloudIn, bool showDebug) {
-  std::vector< int > index;
-  if (!pointCloudIn->is_dense){
+    std::vector< int > index;
+    if (!pointCloudIn->is_dense){
+        if (showDebug)
+            PCL_WARN("Point data not dense, eating NaNs\n");
+        pcl::removeNaNFromPointCloud<PointT>(*pointCloudIn, *pointCloudIn,index);
+        if (showDebug)
+            PCL_INFO ("Done making cloud\n");
+    }
+    std::cerr << "Number of points: " << pointCloudIn->size() << std::endl;
+
+    pcl::PointCloud<PointT>::Ptr cloud_filtered (new pcl::PointCloud<PointT>);
+    pcl::VoxelGrid<PointT> sor;
+    sor.setInputCloud(pointCloudIn);
+    sor.setLeafSize (0.005f, 0.005f, 0.005f);
+    sor.filter(*cloud_filtered);
+
     if (showDebug)
-        PCL_WARN("Point data not dense, eating NaNs\n");
-    pcl::removeNaNFromPointCloud<PointT>(*pointCloudIn, *pointCloudIn,index);
-    if (showDebug)
-        PCL_INFO ("Done making cloud\n");
-  }
-  std::cerr << "Number of points: " << pointCloudIn->size() << std::endl;
+        std::cerr << "Number of points after filtered " << cloud_filtered->size() << std::endl;
 
-  pcl::PointCloud<PointT>::Ptr cloud_filtered (new pcl::PointCloud<PointT>);
-  pcl::VoxelGrid<PointT> sor;
-  sor.setInputCloud(pointCloudIn);
-  sor.setLeafSize (0.005f, 0.005f, 0.005f);
-  sor.filter(*cloud_filtered);
+    seg.setPointCloud(pointCloudIn);
 
-  if (showDebug)
-    std::cerr << "Number of points after filtered " << cloud_filtered->size() << std::endl;
+    seg.doSegmentation();
 
-  seg.setPointCloud(pointCloudIn);
+    pcl::PointCloud<pcl::PointXYZL>::Ptr segmented_cloud_ptr;
 
-  seg.doSegmentation();
+    segmented_cloud_ptr=seg.getSegmentedPointCloud();
 
-  pcl::PointCloud<pcl::PointXYZL>::Ptr segmented_cloud_ptr;
-
-  segmented_cloud_ptr=seg.getSegmentedPointCloud();
-
-  return segmented_cloud_ptr;
+    return segmented_cloud_ptr;
 }
 
 extern "C"
 {   
     Facade* Facade_new(const char* configFilePath) {return new Facade(std::string(configFilePath));}
     pcl::PointCloud<pcl::PointXYZL>::Ptr Facade_segmentImage(Facade* facade, pcl::PointCloud<PointT>::Ptr pointCloudIn, bool showDebug) {
+        std::cout << "showDebug: " << showDebug << std::endl;
+        if (showDebug)
+            std::cout << "Starting image segmentation" << std::endl;
+
         return facade->segmentImage(pointCloudIn, showDebug);
     }   
 }

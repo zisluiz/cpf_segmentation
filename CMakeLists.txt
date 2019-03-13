@@ -37,8 +37,8 @@ include_directories(${CMAKE_CURRENT_SOURCE_DIR}/gco-v3.0)
 add_library (segmentation SHARED src/segmentation.cpp src/configprop.cpp gco-v3.0/maxflow.cpp gco-v3.0/maxflow.cpp gco-v3.0/LinkedBlockList.cpp gco-v3.0/GCoptimization.cpp gco-v3.0/graph.cpp ${HEADERS})
 target_link_libraries (segmentation ${PCL_LIBRARIES})
 
-add_library (segmentation_lib SHARED src/configprop.cpp src/facade.cpp)
-target_link_libraries (segmentation_lib segmentation ${PCL_LIBRARIES})
+add_library (cpf_segmentation SHARED src/configprop.cpp src/facade.cpp)
+target_link_libraries (cpf_segmentation segmentation ${PCL_LIBRARIES})
 
 add_executable (segmentation_test src/segmentation_test.cpp)
 target_link_libraries (segmentation_test ${PCL_LIBRARIES} segmentation)
